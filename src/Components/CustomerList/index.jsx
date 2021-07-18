@@ -1,7 +1,11 @@
-import { Table } from "antd";
-import React, { useEffect } from "react";
+import { Button, Col, Popconfirm, Row, Table } from "antd";
+import Column from "antd/lib/table/Column";
+import ColumnGroup from "antd/lib/table/ColumnGroup";
+import React, { useCallback, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getCustomer } from "../../API/Customers";
+import { deleteCustomer, getCustomers } from "../../API/Customers";
+import { getStates } from "../../API/States";
+import ModalEditForm from "../ModalEditForm";
 
 function CustomerList(props) {
   const dispatch = useDispatch();
@@ -10,44 +14,76 @@ function CustomerList(props) {
   ).map((customer) => {
     return { key: customer.id, ...customer };
   });
-
+  // const states = useSelector((state) =>
+  //   state.StatesReducer.states.map((state) => {
+  //     return { name: state.name, abbreviation: state.abbreviation };
+  //   })
+  // );
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [currentCustomer, setCurrentCustomer] = useState({});
+  const handleDelete = (customerID) => {
+    deleteCustomer(dispatch, customerID);
+  };
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+  const getCustomersAndStates = useCallback(() => {
+    dispatch(getCustomers);
+    dispatch(getStates);
+  }, [dispatch]);
   useEffect(() => {
-    dispatch(getCustomer);
-    console.log(customers);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    getCustomersAndStates();
+  }, [getCustomersAndStates]);
 
-  const columns = [
-    {
-      title: "First Name",
-      dataIndex: "firstName",
-      key: "firstName",
-    },
-    {
-      title: "Last Name",
-      dataIndex: "lastName",
-      key: "lastName",
-    },
-    {
-      title: "Gender",
-      dataIndex: "gender",
-      key: "gender",
-    },
-    {
-      title: "Address",
-      dataIndex: "address",
-      key: "address",
-    },
-    {
-      title: "State",
-      dataIndex: "state",
-      key: "state",
-      render: (state) => <p key={state.abbreviation}>{state.name}</p>,
-    },
-  ];
   return (
     <>
-      <Table dataSource={customers} columns={columns} />;
+      <ModalEditForm
+        onTrigger={setIsModalVisible}
+        data={{ isModalVisible, currentCustomer }}
+      />
+      <Table dataSource={customers}>
+        <ColumnGroup>
+          <Column title="First Name" dataIndex="firstName" key="firstName" />
+          <Column title="Last Name" dataIndex="lastName" key="lastName" />
+        </ColumnGroup>
+        <Column title="Gender" dataIndex="gender" key="gender" />
+        <Column title="Address" dataIndex="address" key="address" />
+        <Column
+          title="City"
+          dataIndex="city"
+          key="city"
+          render={(city) => <p>{city}</p>}
+        />
+        <Column
+          title="Actions"
+          key="actions"
+          render={(customer) => (
+            <Row>
+              <Col span={12}>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    setCurrentCustomer(customer);
+                    showModal();
+                  }}
+                >
+                  Edit
+                </Button>
+              </Col>
+              <Col span={12}>
+                <Popconfirm
+                  title="Sure to delete?"
+                  onConfirm={() => handleDelete(customer.id)}
+                >
+                  <Button type="primary" danger>
+                    Delete
+                  </Button>
+                </Popconfirm>
+              </Col>
+            </Row>
+          )}
+        />
+      </Table>
     </>
   );
 }

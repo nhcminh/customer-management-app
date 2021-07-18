@@ -1,2 +1,3 @@
 import { CustomersAction } from "./Slices/customers";
-export { CustomersAction };
+import { StatesAction } from "./Slices/states";
+export { CustomersAction, StatesAction };
